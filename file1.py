@@ -40,9 +40,28 @@ y = dataset.iloc[:,14].values   #dependent: >50k or <50k
 print(x)
 print(y)
 
+#removing unnecessary attributes
+to_drop = ['fnlwgt', 'education', 'relationship']
+dataset.drop(columns=to_drop, inplace=True)
 
-#handle missing data
+#dropping records with missing data
+new_data = dataset.replace('?', np.NaN)
+#new_data = new_data.dropna(axis = 0, how ='any')   # new dataset with missing values dropped
+
+print("Old data frame length:", len(dataset))
+print("New data frame length:", len(new_data))
+print("Number of rows with at least 1 NA value: ",
+      (len(dataset)-len(new_data)))
 
 #count number of missing values in each column
-print(dataset.isnull().sum()) # currently not detecting missing values
-                              # perhaps we need to change '?' for missing values
+#print(dataset.isnull().sum()) # currently not detecting missing values
+
+#Find categorical features
+s = (new_data.dtypes == 'object')
+object_cols = list(s[s].index)
+print("Categorical variables:")
+print(object_cols)
+
+#Display only categorical feature records
+features = new_data[object_cols]
+print(features.head())
