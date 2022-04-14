@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import Binarizer
-import matplotlib.pyplot as plt
+
+
 
 # load dataset
 columns = [
@@ -177,6 +177,10 @@ to_drop = ['type_employer', 'marital', 'occupation']
 dataset.drop(columns=to_drop, inplace=True)
 
 
-
-print(dataset.head())
+with pd.option_context('display.max_rows', 10,
+                       'display.max_columns', None,
+                       'display.precision', 3,
+                       ):
+    print(dataset)
+#print(dataset)
 print(dataset.describe(include='all'))
