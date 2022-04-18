@@ -1,7 +1,15 @@
+from subprocess import call
+
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
+from sklearn import tree
+from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.preprocessing import MinMaxScaler
-
+from sklearn.metrics import accuracy_score, confusion_matrix
+import graphviz
+from subprocess import check_call
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 
 print("---------------------------------------------------------------------\n"
       "Preprocessing adult.input data...\n"
@@ -11,12 +19,12 @@ print("---------------------------------------------------------------------\n"
 columns = [
     'age',
     'type_employer',
-    'fnlwgt',       # must remove
-    'education',    # must remove
+    'fnlwgt',  # must remove
+    'education',  # must remove
     'education_num',
     'marital',
     'occupation',
-    'relationship', # must remove
+    'relationship',  # must remove
     'race',
     'sex',
     'capital_gain',
@@ -74,13 +82,13 @@ print("\n")
 # binarization of attributes "capital_gain" "capital_loss" "country" (symmetric)
 train_data.loc[train_data["capital_gain"] > 0, "capital_gain"] = 1
 train_data.loc[train_data["capital_loss"] > 0, "capital_loss"] = 1
-train_data["country"] = (train_data["country"] == "United-States").astype(int)  # 1 if country == United_States, 0 otherwise
+train_data["country"] = (train_data["country"] == "United-States").astype(
+    int)  # 1 if country == United_States, 0 otherwise
 train_data["capital_gain>0"] = train_data["capital_gain"]
 train_data["capital_loss>0"] = train_data["capital_loss"]
 train_data["country=USA"] = train_data["country"]
 to_drop = ["country", "capital_gain", "capital_loss"]
 train_data.drop(columns=to_drop, inplace=True)
-
 
 # discretization of continuous attributes "age" and "hr_per_week" (3.2)
 # splitting age into four intervals
@@ -188,15 +196,6 @@ with pd.option_context('display.max_rows', 10,
     print(train_data)
 # print(dataset.describe(include='all'))
 
-# create dependent and independent variable vectors
-x = train_data.iloc[:, :-1].values  # independent: all rows and colums except last column
-y = train_data.iloc[:, 14].values  # dependent: >50k or <50k
-print("\nPredicting attributes : \n")
-print(x)
-print("\nClass Label : \n")
-print(y)
-print("\n")
-
 ################################################################################################
 # REPEATING PROCESS FOR adult.test
 ################################################################################################
@@ -208,12 +207,12 @@ print("---------------------------------------------------------------------\n"
 columns = [
     'age',
     'type_employer',
-    'fnlwgt',       # must remove
-    'education',    # must remove
+    'fnlwgt',  # must remove
+    'education',  # must remove
     'education_num',
     'marital',
     'occupation',
-    'relationship', # must remove
+    'relationship',  # must remove
     'race',
     'sex',
     'capital_gain',
@@ -260,13 +259,13 @@ print("\n")
 # binarization of attributes "capital_gain" "capital_loss" "country" (symmetric)
 test_data.loc[test_data["capital_gain"] > 0, "capital_gain"] = 1
 test_data.loc[test_data["capital_loss"] > 0, "capital_loss"] = 1
-test_data["country"] = (test_data["country"] == "United-States").astype(int)  # 1 if country == United_States, 0 otherwise
+test_data["country"] = (test_data["country"] == "United-States").astype(
+    int)  # 1 if country == United_States, 0 otherwise
 test_data["capital_gain>0"] = test_data["capital_gain"]
 test_data["capital_loss>0"] = test_data["capital_loss"]
 test_data["country=USA"] = test_data["country"]
 to_drop = ["country", "capital_gain", "capital_loss"]
 test_data.drop(columns=to_drop, inplace=True)
-
 
 # discretization of continuous attributes "age" and "hr_per_week" (3.2)
 # splitting age into four intervals
@@ -277,11 +276,11 @@ test_data["old[66,90]"] = test_data["age"]
 # binarization of age for each interval (asymmetric)
 test_data["young[<=25]"] = (test_data["young[<=25]"] <= 25).astype(int)
 test_data["adult[26,45]"] = ((test_data["adult[26,45]"] < 46)
-                              & (test_data["adult[26,45]"] > 25)).astype(int)
+                             & (test_data["adult[26,45]"] > 25)).astype(int)
 test_data["senior[46,65]"] = ((test_data["senior[46,65]"] < 66)
-                               & (test_data["senior[46,65]"] > 45)).astype(int)
+                              & (test_data["senior[46,65]"] > 45)).astype(int)
 test_data["old[66,90]"] = ((test_data["old[66,90]"] < 91)
-                            & (test_data["old[66,90]"] > 65)).astype(int)
+                           & (test_data["old[66,90]"] > 65)).astype(int)
 # drop column 'age'
 test_data.drop(columns='age', inplace=True)
 
@@ -304,25 +303,25 @@ test_data['private'] = test_data['type_employer']
 test_data['self_employed'] = test_data['type_employer']
 # binarize attributes (asymmetric)
 test_data['gov'] = ((test_data['gov'] == 'Federal-gov')
-                     | (test_data['gov'] == 'State-gov')
-                     | (test_data['gov'] == 'Local-gov')).astype(int)
+                    | (test_data['gov'] == 'State-gov')
+                    | (test_data['gov'] == 'Local-gov')).astype(int)
 test_data['not_working'] = ((test_data['not_working'] == 'Without-pay')
-                             | (test_data['not_working'] == 'Never-worked')).astype(int)
+                            | (test_data['not_working'] == 'Never-worked')).astype(int)
 test_data['private'] = (test_data['private'] == 'Private').astype(int)
 test_data['self_employed'] = ((test_data['self_employed'] == 'Self-emp-inc')
-                               | (test_data['gov'] == 'Self-emp-not-inc')).astype(int)
+                              | (test_data['gov'] == 'Self-emp-not-inc')).astype(int)
 # splitting 'marital' into 3 columns
 test_data['married'] = test_data['marital']
 test_data['never_married'] = test_data['marital']
 test_data['not_married'] = test_data['marital']
 # binarize attributes (asymmetric)
 test_data['married'] = ((test_data['married'] == 'Married-AF-spouse')
-                         | (test_data['married'] == 'Married-civ-spouse')).astype(int)
+                        | (test_data['married'] == 'Married-civ-spouse')).astype(int)
 test_data['never_married'] = (test_data['never_married'] == 'Never-married').astype(int)
 test_data['not_married'] = ((test_data['not_married'] == 'Married-spouse-absent')
-                             | (test_data['not_married'] == 'Separated')
-                             | (test_data['not_married'] == 'Divorced')
-                             | (test_data['not_married'] == 'Widowed')).astype(int)
+                            | (test_data['not_married'] == 'Separated')
+                            | (test_data['not_married'] == 'Divorced')
+                            | (test_data['not_married'] == 'Widowed')).astype(int)
 # splitting 'occupation' into 5 columns
 test_data['exec_managerial'] = test_data['occupation']
 test_data['prof-specialty'] = test_data['occupation']
@@ -333,16 +332,16 @@ test_data['sales'] = test_data['occupation']
 test_data['exec_managerial'] = (test_data['exec_managerial'] == '').astype(int)
 test_data['prof-specialty'] = (test_data['prof-specialty'] == '').astype(int)
 test_data['other'] = ((test_data['other'] == 'Tech-support')
-                       | (test_data['other'] == 'Adm-clerical')
-                       | (test_data['other'] == 'Priv-house-serv')
-                       | (test_data['other'] == 'Protective-serv')
-                       | (test_data['other'] == 'Armed-Forces')
-                       | (test_data['other'] == 'Other-service')).astype(int)
+                      | (test_data['other'] == 'Adm-clerical')
+                      | (test_data['other'] == 'Priv-house-serv')
+                      | (test_data['other'] == 'Protective-serv')
+                      | (test_data['other'] == 'Armed-Forces')
+                      | (test_data['other'] == 'Other-service')).astype(int)
 test_data['manual_work'] = ((test_data['manual_work'] == 'Craft-repair')
-                             | (test_data['manual_work'] == 'Farming-fishing')
-                             | (test_data['manual_work'] == 'Handlers-cleaners')
-                             | (test_data['manual_work'] == 'Machine-op-inspct')
-                             | (test_data['manual_work'] == 'Transport-moving')).astype(int)
+                            | (test_data['manual_work'] == 'Farming-fishing')
+                            | (test_data['manual_work'] == 'Handlers-cleaners')
+                            | (test_data['manual_work'] == 'Machine-op-inspct')
+                            | (test_data['manual_work'] == 'Transport-moving')).astype(int)
 test_data['sales'] = (test_data['sales'] == 'Sales').astype(int)
 
 # dropping old columns
@@ -355,14 +354,14 @@ test_data['education_num'] = minmax_scale.fit_transform(test_data[['education_nu
 
 # Binarization of race -- if (white or asian) -> 1 else 0
 test_data['race=white/asian'] = ((test_data['race'] == 'White')
-                                  | (test_data['race'] == 'Asian-Pac-Islander')).astype(int)
+                                 | (test_data['race'] == 'Asian-Pac-Islander')).astype(int)
 test_data.drop(columns='race', inplace=True)
 
 # Binarization of sex -- if male -> 1 else 0
 test_data['sex=male'] = (test_data['sex'] == 'Male').astype(int)
 test_data.drop(columns='sex', inplace=True)
 
-#rearranging dataframe so income>50K is last column
+# rearranging dataframe so income>50K is last column
 test_data['income>50K'] = test_data['income']
 test_data.drop(columns='income', inplace=True)
 
@@ -374,17 +373,77 @@ with pd.option_context('display.max_rows', 10,
     print(test_data)
 # print(test_data.describe(include='all'))
 
-# create dependent and independent variable vectors
-x1 = train_data.iloc[:, :-1].values  # independent: all rows and colums except last column
-y1 = train_data.iloc[:, 14].values  # dependent: >50k or <50k
-print("\nPredicting attributes : \n")
-print(x1)
-print("\nClass Label : \n")
-print(y1)
-print("\n")
-
-
-
 ##################################################################################
 # Training and Model Selection (Decision Tree)
 ##################################################################################
+
+# Splitting training dataset and Create Test Variables
+X = train_data.iloc[:, :-1].values  # independent: all rows and columns used to make predictions
+Y = train_data.iloc[:, -1].values  # dependent: >50k or <50k
+X = pd.DataFrame(X)
+Y = pd.DataFrame(Y)
+
+X.columns = ['education_num', 'capital_gain>0', 'capital_loss>0', 'country=USA',
+             'young[<=25]', 'adult[26,45]', 'senior[46,65]', 'old[66,90]',
+             'part_time(<40)', 'full_time(=40)', 'over_time(>40)', 'gov',
+             'not_working', 'private', 'self_employed', 'married', 'never_married',
+             'not_married', 'exec_managerial', 'prof-specialty', 'other',
+             'manual_work', 'sales', 'race=white/asian', 'sex=male']
+Y.columns = ['income>50K']
+
+print("\nFeature variables 'X' : ")
+print(X)
+print("\nTarget Variable 'Y' : ")
+print(Y)
+print("\n")
+
+# setting initial variables for decision tree model
+seed = teamID = 8
+num_folds = 10  # for cross-validation
+validation_size = 0.20  # for cross-validation
+scoring = 'accuracy'
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=seed)
+
+'''
+# predict using cross validation (doesnt work with confusion matrix)
+kfold = KFold(n_splits=10, random_state=seed, shuffle=True)
+cv_results = cross_val_score(DecisionTreeClassifier(), X_train, y_train, cv=kfold,
+                             scoring='accuracy')
+y_predict = cv_results.mean()  # takes the average of the 10 results from cross validation
+print(y_predict)
+'''
+
+# prediction without cross validation
+dt_classifier = tree.DecisionTreeClassifier()
+dt_classifier = dt_classifier.fit(X_train, y_train)
+y_predict = dt_classifier.predict(X_test)
+#print(y_predict)
+print("Prediction Accuracy : ")
+print(accuracy_score(y_test, y_predict))
+print("\n")
+
+
+# confusion matrix of dt_classifier results
+print(pd.DataFrame(
+    confusion_matrix(y_test, y_predict),
+    columns=['Predicted <=50k', 'Predicted >50k'],
+    index=['True <=50k', 'True >50k']
+))
+
+# trying to get a visual representation
+'''
+dot_data = tree.export_graphviz(dt_classifier, out_file='tree.dot', feature_names=X.columns, filled=True)
+graph = graphviz.Source(dot_data, format="png")
+print(graph)
+
+#converting dot file to png file
+call(['dot', '-Tpng', 'tree.dot', '-o', 'tree.png'])
+'''
+"""
+plt.figure(figsize=(15, 7.5))
+print(tree.plot_tree(dt_classifier,
+               filled=True,
+               rounded=True,
+               class_names=["<=50K", ">50K"],
+               feature_names=X.columns))
+"""
