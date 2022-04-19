@@ -395,13 +395,13 @@ X.columns = ['education_num', 'capital_gain>0', 'capital_loss>0', 'country=USA',
              'not_married', 'exec_managerial', 'prof-specialty', 'other',
              'manual_work', 'sales', 'race=white/asian', 'sex=male']
 Y.columns = ['income>50K']
-'''
+
 print("\nFeature variables 'X' : ")
 print(X)
 print("\nTarget Variable 'Y' : ")
 print(Y)
 print("\n")
-'''
+
 # Splitting testing dataset
 Xtest = test_data.iloc[:, :-1].values  # independent: all rows and columns used to make predictions
 Ytest = test_data.iloc[:, -1].values  # dependent: >50k or <50k

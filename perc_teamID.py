@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import Perceptron
+from sklearn.metrics import accuracy_score
 
 
 print("---------------------------------------------------------------------\n"
@@ -374,17 +377,57 @@ with pd.option_context('display.max_rows', 10,
     print(test_data)
 # print(test_data.describe(include='all'))
 
-# create dependent and independent variable vectors
-x1 = train_data.iloc[:, :-1].values  # independent: all rows and colums except last column
-y1 = train_data.iloc[:, 14].values  # dependent: >50k or <50k
-print("\nPredicting attributes : \n")
-print(x1)
-print("\nClass Label : \n")
-print(y1)
-print("\n")
-
-
-
 ##################################################################################
 # Training and Model Selection (Perceptron)
 ##################################################################################
+
+# Splitting training dataset
+X = train_data.iloc[:, :-1].values  # independent: all rows and columns used to make predictions
+Y = train_data.iloc[:, -1].values  # dependent: >50k or <50k
+#print(X)
+#print(Y)
+'''
+X = pd.DataFrame(X)
+Y = pd.DataFrame(Y)
+
+X.columns = ['education_num', 'capital_gain>0', 'capital_loss>0', 'country=USA',
+             'young[<=25]', 'adult[26,45]', 'senior[46,65]', 'old[66,90]',
+             'part_time(<40)', 'full_time(=40)', 'over_time(>40)', 'gov',
+             'not_working', 'private', 'self_employed', 'married', 'never_married',
+             'not_married', 'exec_managerial', 'prof-specialty', 'other',
+             'manual_work', 'sales', 'race=white/asian', 'sex=male']
+Y.columns = ['income>50K']
+'''
+test_size = 0.28
+random_state = 8
+X_train, X_test, y_train, y_test = train_test_split(X,
+                                                    Y,
+                                                    test_size=test_size,
+
+                                                    random_state=random_state)
+# model with 'max_iter=15' and 'eta0=0.2'
+ppn1 = Perceptron(max_iter=15, eta0=0.2, random_state=random_state)
+# fit the model to the training data
+ppn1.fit(X_train, y_train)
+y_pred = ppn1.predict(X_test)
+# measure performance using 'accuracy_score' function
+print("model1 accuracy: ")
+print(accuracy_score(y_test, y_pred) * 100)
+
+# model with 'max_iter=40' and 'eta0=0.2'
+ppn2 = Perceptron(max_iter=40, eta0=0.2, random_state=random_state)
+# fit the model to the training data
+ppn2.fit(X_train, y_train)
+y_pred = ppn2.predict(X_test)
+# measure performance using 'accuracy_score' function
+print("model2 accuracy: ")
+print(accuracy_score(y_test, y_pred) * 100)
+
+# model with 'max_iter=65' and 'eta0=0.2'
+ppn3 = Perceptron(max_iter=65, eta0=0.2, random_state=random_state)
+# fit the model to the training data
+ppn3.fit(X_train, y_train)
+y_pred = ppn3.predict(X_test)
+# measure performance using 'accuracy_score' function
+print("model3 accuracy: ")
+print(accuracy_score(y_test, y_pred) * 100)
