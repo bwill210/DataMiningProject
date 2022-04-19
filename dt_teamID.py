@@ -2,11 +2,12 @@ from subprocess import call
 
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from matplotlib import pyplot as plt
 from sklearn import tree
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 import graphviz
 from subprocess import check_call
 from sklearn.tree import DecisionTreeClassifier, plot_tree
@@ -377,7 +378,11 @@ with pd.option_context('display.max_rows', 10,
 # Training and Model Selection (Decision Tree)
 ##################################################################################
 
-# Splitting training dataset and Create Test Variables
+print("\n---------------------------------------------------------------------\n"
+      "Training and Model Evaluation (decision tree)\n"
+      "---------------------------------------------------------------------\n")
+
+# Splitting training dataset
 X = train_data.iloc[:, :-1].values  # independent: all rows and columns used to make predictions
 Y = train_data.iloc[:, -1].values  # dependent: >50k or <50k
 X = pd.DataFrame(X)
@@ -390,19 +395,39 @@ X.columns = ['education_num', 'capital_gain>0', 'capital_loss>0', 'country=USA',
              'not_married', 'exec_managerial', 'prof-specialty', 'other',
              'manual_work', 'sales', 'race=white/asian', 'sex=male']
 Y.columns = ['income>50K']
-
+'''
 print("\nFeature variables 'X' : ")
 print(X)
 print("\nTarget Variable 'Y' : ")
 print(Y)
 print("\n")
+'''
+# Splitting testing dataset
+Xtest = test_data.iloc[:, :-1].values  # independent: all rows and columns used to make predictions
+Ytest = test_data.iloc[:, -1].values  # dependent: >50k or <50k
+Xtest = pd.DataFrame(Xtest)
+Ytest = pd.DataFrame(Ytest)
 
-# setting initial variables for decision tree model
+Xtest.columns = ['education_num', 'capital_gain>0', 'capital_loss>0', 'country=USA',
+             'young[<=25]', 'adult[26,45]', 'senior[46,65]', 'old[66,90]',
+             'part_time(<40)', 'full_time(=40)', 'over_time(>40)', 'gov',
+             'not_working', 'private', 'self_employed', 'married', 'never_married',
+             'not_married', 'exec_managerial', 'prof-specialty', 'other',
+             'manual_work', 'sales', 'race=white/asian', 'sex=male']
+Ytest.columns = ['income>50K']
+'''
+print("\nFeature variables 'X' : ")
+print(Xtest)
+print("\nTarget Variable 'Y' : ")
+print(Ytest)
+print("\n")
+'''
+# Splitting dataset into training and validation sets (80/20 split)
+#num_folds = 10          # for cross-validation
+#validation_size = 0.20  # for cross-validation
+#scoring = 'accuracy'    # for cross-validation
 seed = teamID = 8
-num_folds = 10  # for cross-validation
-validation_size = 0.20  # for cross-validation
-scoring = 'accuracy'
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=seed)
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=seed)
 
 '''
 # predict using cross validation (doesnt work with confusion matrix)
@@ -414,36 +439,131 @@ print(y_predict)
 '''
 
 # prediction without cross validation
-dt_classifier = tree.DecisionTreeClassifier()
+# hyperparameter testing (criterion='gini')
+dt_classifier = tree.DecisionTreeClassifier(criterion='gini')
 dt_classifier = dt_classifier.fit(X_train, y_train)
 y_predict = dt_classifier.predict(X_test)
-#print(y_predict)
+accuracy = accuracy_score(y_test, y_predict)
+'''
+print("Results for criterion='gini'")
 print("Prediction Accuracy : ")
-print(accuracy_score(y_test, y_predict))
-print("\n")
-
-
-# confusion matrix of dt_classifier results
-print(pd.DataFrame(
-    confusion_matrix(y_test, y_predict),
-    columns=['Predicted <=50k', 'Predicted >50k'],
-    index=['True <=50k', 'True >50k']
-))
-
-# trying to get a visual representation
+print(accuracy)
+print("Misclassification Error : ")
+print(1 - accuracy)
+print("-----------------------------------------")
 '''
-dot_data = tree.export_graphviz(dt_classifier, out_file='tree.dot', feature_names=X.columns, filled=True)
-graph = graphviz.Source(dot_data, format="png")
-print(graph)
 
-#converting dot file to png file
-call(['dot', '-Tpng', 'tree.dot', '-o', 'tree.png'])
+# hyperparameter testing (criterion='entropy')
+dt_classifier = tree.DecisionTreeClassifier(criterion='entropy')
+dt_classifier = dt_classifier.fit(X_train, y_train)
+y_predict = dt_classifier.predict(X_test)
+accuracy = accuracy_score(y_test, y_predict)
 '''
-"""
-plt.figure(figsize=(15, 7.5))
-print(tree.plot_tree(dt_classifier,
-               filled=True,
-               rounded=True,
+print("Results for criterion='entropy'")
+print("Prediction Accuracy : ")
+print(accuracy)
+print("Misclassification Error : ")
+print(1 - accuracy)
+print("-----------------------------------------")
+'''
+
+# hyperparameter testing (min_samples_split=30) if there are <30 samples, make leaf node (dont split)
+dt_classifier = tree.DecisionTreeClassifier(min_samples_split=30)
+dt_classifier = dt_classifier.fit(X_train, y_train)
+y_predict1 = dt_classifier.predict(X_test)
+accuracy = accuracy_score(y_test, y_predict1)
+'''
+print("Results for min_samples_split=30")
+print("Prediction Accuracy : ")
+print(accuracy)
+print("Misclassification Error : ")
+print(1 - accuracy)
+print("-----------------------------------------")
+'''
+# Create confusion matrix png (min_samples_split=30)
+fig = plt.figure(figsize=(6,4))
+mat = confusion_matrix(y_test, y_predict1)
+sns.heatmap(mat.T, cmap="Blues", square=True, annot=True, fmt='d', cbar=False)
+plt.xlabel('Predicted (>50K)')
+plt.ylabel('True (>50K)')
+fig.savefig("confusion_matrix1.png")
+
+
+# hyperparameter testing (min_samples_split=40) if there are <40 samples, make leaf node (dont split)
+dt_classifier = tree.DecisionTreeClassifier(min_samples_split=40)
+dt_classifier = dt_classifier.fit(X_train, y_train)
+y_predict2 = dt_classifier.predict(X_test)
+accuracy = accuracy_score(y_test, y_predict2)
+'''
+print("Results for min_samples_split=40")
+print("Prediction Accuracy : ")
+print(accuracy)
+print("Misclassification Error : ")
+print(1 - accuracy)
+print("-----------------------------------------")
+'''
+# Create confusion matrix png (min_samples_split=40)
+fig = plt.figure(figsize=(6,4))
+mat = confusion_matrix(y_test, y_predict2)
+sns.heatmap(mat.T, cmap="Blues", square=True, annot=True, fmt='d', cbar=False)
+plt.xlabel('Predicted (>50K)')
+plt.ylabel('True (>50K)')
+fig.savefig("confusion_matrix2.png")
+
+
+# hyperparameter testing (min_samples_split=50) if there are <50 samples, make leaf node (dont split)
+dt_classifier = tree.DecisionTreeClassifier(min_samples_split=50)
+dt_classifier = dt_classifier.fit(X_train, y_train)
+y_predict3 = dt_classifier.predict(X_test)
+accuracy = accuracy_score(y_test, y_predict3)
+'''
+print("Results for min_samples_split=50")
+print("Prediction Accuracy : ")
+print(accuracy)
+print("Misclassification Error : ")
+print(1 - accuracy)
+print("-----------------------------------------")
+'''
+# Create confusion matrix png (min_samples_split=50)
+fig = plt.figure(figsize=(6,4))
+mat = confusion_matrix(y_test, y_predict3)
+sns.heatmap(mat.T, cmap="Blues", square=True, annot=True, fmt='d', cbar=False)
+plt.xlabel('Predicted (>50K)')
+plt.ylabel('True (>50K)')
+fig.savefig("confusion_matrix3.png")
+
+
+# Optimal hyperparameter combination --> criterion='gini' AND min_leaf_size=40
+print("Optimal hyperparameter combination --> criterion='gini' AND min_leaf_size=40")
+print("Prediction Accuracy : ")
+accuracy = accuracy_score(y_test, y_predict2)
+print(accuracy)
+print("Misclassification Error : ")
+print(1 - accuracy)
+print('\n')
+
+print("Evaluation Metrics :")
+report = classification_report(y_predict2, y_test)
+print(report)
+
+# Saving test set predictions
+dt_classifier = tree.DecisionTreeClassifier(min_samples_split=40)
+dt_classifier = dt_classifier.fit(X, Y) # ?? .fit(X,Y) or .fit(X_train, y_train)??
+y_predictFinal = dt_classifier.predict(Xtest)
+np.savetxt("pred_dt_8.csv", y_predictFinal, delimiter=",", fmt="%d")
+print("test set predictions saved to 'pred_dt_8.csv'")
+
+# visual representation of decision tree
+'''
+fig = plt.figure(figsize=(50, 30))
+
+_ = tree.plot_tree(dt_classifier,
+               feature_names=X.columns,
                class_names=["<=50K", ">50K"],
-               feature_names=X.columns))
-"""
+               filled=True,
+               rounded=True)
+fig.savefig("decision_tree.png")
+'''
+
+
+
