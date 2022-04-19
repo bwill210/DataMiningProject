@@ -1,16 +1,13 @@
-from subprocess import call
+
 
 import pandas as pd
 import numpy as np
-import seaborn as sns
 from matplotlib import pyplot as plt
-from sklearn import tree
-from sklearn.model_selection import train_test_split, KFold, cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import Perceptron
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-import graphviz
-from subprocess import check_call
-from sklearn.tree import DecisionTreeClassifier, plot_tree
+import seaborn as sns
 
 print("---------------------------------------------------------------------\n"
       "Preprocessing adult.input data...\n"
@@ -20,12 +17,12 @@ print("---------------------------------------------------------------------\n"
 columns = [
     'age',
     'type_employer',
-    'fnlwgt',  # must remove
-    'education',  # must remove
+    'fnlwgt',       # must remove
+    'education',    # must remove
     'education_num',
     'marital',
     'occupation',
-    'relationship',  # must remove
+    'relationship', # must remove
     'race',
     'sex',
     'capital_gain',
@@ -83,13 +80,13 @@ print("\n")
 # binarization of attributes "capital_gain" "capital_loss" "country" (symmetric)
 train_data.loc[train_data["capital_gain"] > 0, "capital_gain"] = 1
 train_data.loc[train_data["capital_loss"] > 0, "capital_loss"] = 1
-train_data["country"] = (train_data["country"] == "United-States").astype(
-    int)  # 1 if country == United_States, 0 otherwise
+train_data["country"] = (train_data["country"] == "United-States").astype(int)  # 1 if country == United_States, 0 otherwise
 train_data["capital_gain>0"] = train_data["capital_gain"]
 train_data["capital_loss>0"] = train_data["capital_loss"]
 train_data["country=USA"] = train_data["country"]
 to_drop = ["country", "capital_gain", "capital_loss"]
 train_data.drop(columns=to_drop, inplace=True)
+
 
 # discretization of continuous attributes "age" and "hr_per_week" (3.2)
 # splitting age into four intervals
@@ -197,6 +194,15 @@ with pd.option_context('display.max_rows', 10,
     print(train_data)
 # print(dataset.describe(include='all'))
 
+# create dependent and independent variable vectors
+x = train_data.iloc[:, :-1].values  # independent: all rows and colums except last column
+y = train_data.iloc[:, 14].values  # dependent: >50k or <50k
+print("\nPredicting attributes : \n")
+print(x)
+print("\nClass Label : \n")
+print(y)
+print("\n")
+
 ################################################################################################
 # REPEATING PROCESS FOR adult.test
 ################################################################################################
@@ -208,12 +214,12 @@ print("---------------------------------------------------------------------\n"
 columns = [
     'age',
     'type_employer',
-    'fnlwgt',  # must remove
-    'education',  # must remove
+    'fnlwgt',       # must remove
+    'education',    # must remove
     'education_num',
     'marital',
     'occupation',
-    'relationship',  # must remove
+    'relationship', # must remove
     'race',
     'sex',
     'capital_gain',
@@ -260,13 +266,13 @@ print("\n")
 # binarization of attributes "capital_gain" "capital_loss" "country" (symmetric)
 test_data.loc[test_data["capital_gain"] > 0, "capital_gain"] = 1
 test_data.loc[test_data["capital_loss"] > 0, "capital_loss"] = 1
-test_data["country"] = (test_data["country"] == "United-States").astype(
-    int)  # 1 if country == United_States, 0 otherwise
+test_data["country"] = (test_data["country"] == "United-States").astype(int)  # 1 if country == United_States, 0 otherwise
 test_data["capital_gain>0"] = test_data["capital_gain"]
 test_data["capital_loss>0"] = test_data["capital_loss"]
 test_data["country=USA"] = test_data["country"]
 to_drop = ["country", "capital_gain", "capital_loss"]
 test_data.drop(columns=to_drop, inplace=True)
+
 
 # discretization of continuous attributes "age" and "hr_per_week" (3.2)
 # splitting age into four intervals
@@ -362,7 +368,7 @@ test_data.drop(columns='race', inplace=True)
 test_data['sex=male'] = (test_data['sex'] == 'Male').astype(int)
 test_data.drop(columns='sex', inplace=True)
 
-# rearranging dataframe so income>50K is last column
+#rearranging dataframe so income>50K is last column
 test_data['income>50K'] = test_data['income']
 test_data.drop(columns='income', inplace=True)
 
@@ -375,12 +381,8 @@ with pd.option_context('display.max_rows', 10,
 # print(test_data.describe(include='all'))
 
 ##################################################################################
-# Training and Model Selection (Decision Tree)
+# Training and Model Selection (Perceptron)
 ##################################################################################
-
-print("\n---------------------------------------------------------------------\n"
-      "Training and Model Evaluation (decision tree)\n"
-      "---------------------------------------------------------------------\n")
 
 # Splitting training dataset
 X = train_data.iloc[:, :-1].values  # independent: all rows and columns used to make predictions
@@ -396,12 +398,8 @@ X.columns = ['education_num', 'capital_gain>0', 'capital_loss>0', 'country=USA',
              'manual_work', 'sales', 'race=white/asian', 'sex=male']
 Y.columns = ['income>50K']
 
-print("\nFeature variables 'X' : ")
-print(X)
-print("\nTarget Variable 'Y' : ")
-print(Y)
-print("\n")
 
+# Splitting testing dataset
 # Splitting testing dataset
 Xtest = test_data.iloc[:, :-1].values  # independent: all rows and columns used to make predictions
 Ytest = test_data.iloc[:, -1].values  # dependent: >50k or <50k
@@ -409,161 +407,99 @@ Xtest = pd.DataFrame(Xtest)
 Ytest = pd.DataFrame(Ytest)
 
 Xtest.columns = ['education_num', 'capital_gain>0', 'capital_loss>0', 'country=USA',
-             'young[<=25]', 'adult[26,45]', 'senior[46,65]', 'old[66,90]',
-             'part_time(<40)', 'full_time(=40)', 'over_time(>40)', 'gov',
-             'not_working', 'private', 'self_employed', 'married', 'never_married',
-             'not_married', 'exec_managerial', 'prof-specialty', 'other',
-             'manual_work', 'sales', 'race=white/asian', 'sex=male']
+                 'young[<=25]', 'adult[26,45]', 'senior[46,65]', 'old[66,90]',
+                 'part_time(<40)', 'full_time(=40)', 'over_time(>40)', 'gov',
+                 'not_working', 'private', 'self_employed', 'married', 'never_married',
+                 'not_married', 'exec_managerial', 'prof-specialty', 'other',
+                 'manual_work', 'sales', 'race=white/asian', 'sex=male']
 Ytest.columns = ['income>50K']
-'''
-print("\nFeature variables 'X' : ")
-print(Xtest)
-print("\nTarget Variable 'Y' : ")
-print(Ytest)
-print("\n")
-'''
-# Splitting dataset into training and validation sets (80/20 split)
-#num_folds = 10          # for cross-validation
-#validation_size = 0.20  # for cross-validation
-#scoring = 'accuracy'    # for cross-validation
-seed = teamID = 8
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=seed)
 
-'''
-# predict using cross validation (doesnt work with confusion matrix)
-kfold = KFold(n_splits=10, random_state=seed, shuffle=True)
-cv_results = cross_val_score(DecisionTreeClassifier(), X_train, y_train, cv=kfold,
-                             scoring='accuracy')
-y_predict = cv_results.mean()  # takes the average of the 10 results from cross validation
-print(y_predict)
-'''
+test_size = 0.28
+random_state = 8
+X_train, X_test, y_train, y_test = train_test_split(X,
+                                                    Y,
+                                                    test_size=test_size,
 
-# prediction without cross validation
-# hyperparameter testing (criterion='gini')
-dt_classifier = tree.DecisionTreeClassifier(criterion='gini')
-dt_classifier = dt_classifier.fit(X_train, y_train)
-y_predict = dt_classifier.predict(X_test)
-accuracy = accuracy_score(y_test, y_predict)
-'''
-print("Results for criterion='gini'")
-print("Prediction Accuracy : ")
-print(accuracy)
-print("Misclassification Error : ")
-print(1 - accuracy)
-print("-----------------------------------------")
-'''
 
-# hyperparameter testing (criterion='entropy')
-dt_classifier = tree.DecisionTreeClassifier(criterion='entropy')
-dt_classifier = dt_classifier.fit(X_train, y_train)
-y_predict = dt_classifier.predict(X_test)
-accuracy = accuracy_score(y_test, y_predict)
-'''
-print("Results for criterion='entropy'")
-print("Prediction Accuracy : ")
-print(accuracy)
-print("Misclassification Error : ")
-print(1 - accuracy)
-print("-----------------------------------------")
-'''
+                                                    random_state=random_state)
+# model with 'max_iter=15' and 'eta0=0.2'
+perc1 = Perceptron(max_iter=15, eta0=0.2, random_state=random_state)
+# fit the model to the training data
+perc1.fit(X_train, y_train.values.ravel())
+y_pred1 = perc1.predict(X_test)
+# measure performance using 'accuracy_score' function
+print("model1 accuracy: ")
+print(accuracy_score(y_test, y_pred1) * 100)
 
-# hyperparameter testing (min_samples_split=30) if there are <30 samples, make leaf node (dont split)
-dt_classifier = tree.DecisionTreeClassifier(min_samples_split=30)
-dt_classifier = dt_classifier.fit(X_train, y_train)
-y_predict1 = dt_classifier.predict(X_test)
-accuracy = accuracy_score(y_test, y_predict1)
-'''
-print("Results for min_samples_split=30")
-print("Prediction Accuracy : ")
-print(accuracy)
-print("Misclassification Error : ")
-print(1 - accuracy)
-print("-----------------------------------------")
-'''
-# Create confusion matrix png (min_samples_split=30)
-fig = plt.figure(figsize=(6,4))
-mat = confusion_matrix(y_test, y_predict1)
+# Create confusion matrix png (max_iter=15)
+fig = plt.figure(figsize=(6, 4))
+mat = confusion_matrix(y_test, y_pred1)
 sns.heatmap(mat.T, cmap="Blues", square=True, annot=True, fmt='d', cbar=False)
 plt.xlabel('Predicted (>50K)')
 plt.ylabel('True (>50K)')
-fig.savefig("confusion_matrix1.png")
+fig.savefig("confusion_matrix_perc1.png")
 
 
-# hyperparameter testing (min_samples_split=40) if there are <40 samples, make leaf node (dont split)
-dt_classifier = tree.DecisionTreeClassifier(min_samples_split=40)
-dt_classifier = dt_classifier.fit(X_train, y_train)
-y_predict2 = dt_classifier.predict(X_test)
-accuracy = accuracy_score(y_test, y_predict2)
-'''
-print("Results for min_samples_split=40")
-print("Prediction Accuracy : ")
-print(accuracy)
-print("Misclassification Error : ")
-print(1 - accuracy)
-print("-----------------------------------------")
-'''
-# Create confusion matrix png (min_samples_split=40)
-fig = plt.figure(figsize=(6,4))
-mat = confusion_matrix(y_test, y_predict2)
+# model with 'max_iter=40' and 'eta0=0.2'
+perc2 = Perceptron(max_iter=40, eta0=0.2, random_state=random_state)
+# fit the model to the training data
+perc2.fit(X_train, y_train.values.ravel())
+y_pred2 = perc2.predict(X_test)
+# measure performance using 'accuracy_score' function
+print("model2 accuracy: ")
+print(accuracy_score(y_test, y_pred2) * 100)
+
+# Create confusion matrix png (max_iter=40)
+fig = plt.figure(figsize=(6, 4))
+mat = confusion_matrix(y_test, y_pred2)
 sns.heatmap(mat.T, cmap="Blues", square=True, annot=True, fmt='d', cbar=False)
 plt.xlabel('Predicted (>50K)')
 plt.ylabel('True (>50K)')
-fig.savefig("confusion_matrix2.png")
+fig.savefig("confusion_matrix_perc2.png")
 
 
-# hyperparameter testing (min_samples_split=50) if there are <50 samples, make leaf node (dont split)
-dt_classifier = tree.DecisionTreeClassifier(min_samples_split=50)
-dt_classifier = dt_classifier.fit(X_train, y_train)
-y_predict3 = dt_classifier.predict(X_test)
-accuracy = accuracy_score(y_test, y_predict3)
-'''
-print("Results for min_samples_split=50")
-print("Prediction Accuracy : ")
-print(accuracy)
-print("Misclassification Error : ")
-print(1 - accuracy)
-print("-----------------------------------------")
-'''
-# Create confusion matrix png (min_samples_split=50)
-fig = plt.figure(figsize=(6,4))
-mat = confusion_matrix(y_test, y_predict3)
+# model with 'max_iter=65' and 'eta0=0.2'
+perc3 = Perceptron(max_iter=65, eta0=0.2, random_state=random_state)
+# fit the model to the training data
+perc3.fit(X_train, y_train.values.ravel())
+y_pred3 = perc3.predict(X_test)
+# measure performance using 'accuracy_score' function
+print("model3 accuracy: ")
+print(accuracy_score(y_test, y_pred3) * 100)
+
+# Create confusion matrix png (max_iter=65)
+fig = plt.figure(figsize=(6, 4))
+mat = confusion_matrix(y_test, y_pred3)
 sns.heatmap(mat.T, cmap="Blues", square=True, annot=True, fmt='d', cbar=False)
 plt.xlabel('Predicted (>50K)')
 plt.ylabel('True (>50K)')
-fig.savefig("confusion_matrix3.png")
+fig.savefig("confusion_matrix_perc3.png")
 
 
-# Optimal hyperparameter combination --> criterion='gini' AND min_leaf_size=40
-print("Optimal hyperparameter combination --> criterion='gini' AND min_leaf_size=40")
-print("Prediction Accuracy : ")
-accuracy = accuracy_score(y_test, y_predict2)
-print(accuracy)
-print("Misclassification Error : ")
-print(1 - accuracy)
-print('\n')
+# model with 'max_iter=40' and 'eta0=1.2' (Best Model)
+perc4 = Perceptron(max_iter=40, eta0=1.2, random_state=random_state)
+# fit the model to the training data
+perc4.fit(X_train, y_train.values.ravel())
+y_pred4 = perc4.predict(X_test)
+# measure performance using 'accuracy_score' function
+print("model4 accuracy: ")
+print(accuracy_score(y_test, y_pred4) * 100)
+
+# Create confusion matrix png (max_iter=65)
+fig = plt.figure(figsize=(6, 4))
+mat = confusion_matrix(y_test, y_pred4)
+sns.heatmap(mat.T, cmap="Blues", square=True, annot=True, fmt='d', cbar=False)
+plt.xlabel('Predicted (>50K)')
+plt.ylabel('True (>50K)')
+fig.savefig("confusion_matrix_perc4.png")
 
 print("Evaluation Metrics :")
-report = classification_report(y_predict2, y_test)
+report = classification_report(y_pred4, y_test)
 print(report)
 
-# Saving test set predictions
-dt_classifier = tree.DecisionTreeClassifier(min_samples_split=40)
-dt_classifier = dt_classifier.fit(X, Y) # ?? .fit(X,Y) or .fit(X_train, y_train)??
-y_predictFinal = dt_classifier.predict(Xtest)
-np.savetxt("pred_dt_8.csv", y_predictFinal, delimiter=",", fmt="%d")
-print("test set predictions saved to 'pred_dt_8.csv'")
-
-# visual representation of decision tree
-'''
-fig = plt.figure(figsize=(50, 30))
-
-_ = tree.plot_tree(dt_classifier,
-               feature_names=X.columns,
-               class_names=["<=50K", ">50K"],
-               filled=True,
-               rounded=True)
-fig.savefig("decision_tree.png")
-'''
-
-
-
+# Saving test set predictions of best model (eta0=1.2)
+perc = Perceptron(max_iter=40, eta0=1.2, random_state=random_state)
+perc = perc.fit(X, Y)
+y_predictFinal = perc.predict(Xtest)  # predicting labels for test data
+np.savetxt("pred_perc_8.csv", y_predictFinal, delimiter=",", fmt="%d")
+print("test set predictions saved to 'pred_perc_8.csv'")
