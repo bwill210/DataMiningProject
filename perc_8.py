@@ -434,6 +434,8 @@ y_pred1 = perc1.predict(X_test)
 # measure performance using 'accuracy_score' function
 print("model1 accuracy: ")
 print(accuracy_score(y_test, y_pred1) * 100)
+print("misclassification error:")
+print(100 - (accuracy_score(y_test, y_pred1) * 100))
 
 # Create confusion matrix png (max_iter=15)
 fig = plt.figure(figsize=(6, 4))
@@ -452,6 +454,8 @@ y_pred2 = perc2.predict(X_test)
 # measure performance using 'accuracy_score' function
 print("model2 accuracy: ")
 print(accuracy_score(y_test, y_pred2) * 100)
+print("misclassification error:")
+print(100 - (accuracy_score(y_test, y_pred2) * 100))
 
 # Create confusion matrix png (max_iter=40)
 fig = plt.figure(figsize=(6, 4))
@@ -470,6 +474,8 @@ y_pred3 = perc3.predict(X_test)
 # measure performance using 'accuracy_score' function
 print("model3 accuracy: ")
 print(accuracy_score(y_test, y_pred3) * 100)
+print("misclassification error:")
+print(100 - (accuracy_score(y_test, y_pred3) * 100))
 
 # Create confusion matrix png (max_iter=65)
 fig = plt.figure(figsize=(6, 4))
@@ -488,6 +494,8 @@ y_pred4 = perc4.predict(X_test)
 # measure performance using 'accuracy_score' function
 print("model4 accuracy: ")
 print(accuracy_score(y_test, y_pred4) * 100)
+print("misclassification error:")
+print(100 - (accuracy_score(y_test, y_pred4) * 100))
 print("\n")
 
 # Create confusion matrix png (max_iter=65)
