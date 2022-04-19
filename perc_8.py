@@ -1,4 +1,8 @@
-
+'''
+Assignment: Project 2
+authors: Brock Williams, Roman Mukosieiev (Undergraduates)
+Data Mining spring 2022
+'''
 
 import pandas as pd
 import numpy as np
@@ -484,6 +488,7 @@ y_pred4 = perc4.predict(X_test)
 # measure performance using 'accuracy_score' function
 print("model4 accuracy: ")
 print(accuracy_score(y_test, y_pred4) * 100)
+print("\n")
 
 # Create confusion matrix png (max_iter=65)
 fig = plt.figure(figsize=(6, 4))

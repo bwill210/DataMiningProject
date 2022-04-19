@@ -1,4 +1,8 @@
-from subprocess import call
+'''
+Assignment: Project 2
+authors: Brock Williams, Roman Mukosieiev (Undergraduates)
+Data Mining spring 2022
+'''
 
 import pandas as pd
 import numpy as np
@@ -8,9 +12,6 @@ from sklearn import tree
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-import graphviz
-from subprocess import check_call
-from sklearn.tree import DecisionTreeClassifier, plot_tree
 
 print("---------------------------------------------------------------------\n"
       "Preprocessing adult.input data...\n"
